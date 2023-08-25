@@ -17,10 +17,10 @@ lang: es-ES
 
 ```{r setup, echo=FALSE}
 knitr::opts_chunk$set(warning = FALSE,
-                      message = FALSE)
-
+                      message = FALSE,
+                      echo = FALSE)
+library(kableExtra)
 ```
-
 
 ```{=tex}
 \pagestyle{myheadings}
@@ -33,5 +33,25 @@ knitr::opts_chunk$set(warning = FALSE,
 \textbf{Tarea 1}
 \end{center}
 ```
+Suponga que los datos mostrados en la siguiente tabla corresponde al registro de 120 hogares que conforman un Barrio a quienes se les preguntó si tenían adultos mayores (60 o más años). **1:** Corresponde a un hogar que cumple con el atributo. Seleccione una **MAS** de **15** hogares.
 
+![Tabla de Datos](Images/Tabla.jpeg){width="289"}
+
+\section{Indique la forma como seleccionó la MAS y registre los respectivos valores.}
+
+```{r, echo = TRUE}
+set.seed(1)
+N <- 120 #Total de hogares
+n <- sort(sample(1:N, 15, replace=T)) #Muestra 
+```
+
+Usando el software estadístico R y la función sample() con el parámetro replace en True se toma una muestra aleatoria con remplazo de 15 hogares, lo que permitirá que cualquier hogar tenga la misma probabilidad de ser seleccionado en el estudio. Ademas se fija  una semilla con el fin de permitir reproducibilidad del estudio. 
+
+La muestra aleatoria es la siguiente: 
+
+```{r}
+y <- c(0, 0, 1, 0, 1, 1, 0, 0, 1, 1, 0, 1, 0, 0)
+data <- cbind(n, y)
+kable(t(data), caption = "Tabla de la Muestra Aleatoria")
+```
 
