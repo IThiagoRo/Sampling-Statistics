@@ -52,10 +52,10 @@ Suponga que los datos mostrados en la siguiente tabla corresponde al registro de
 ```{r, echo = TRUE}
 set.seed(1)
 N <- 120 #Total de hogares
-n <- sort(sample(1:N, 15, replace=T)) #Muestra 
+n <- sort(sample(1:N, 15)) #Muestra 
 ```
 
-Usando el software estadístico R y la función sample() con el parámetro replace en True se toma una muestra aleatoria con remplazo de 15 hogares, lo que permitirá que cualquier hogar tenga la misma probabilidad de ser seleccionado en el estudio. Ademas se fija una semilla con el fin de permitir reproducibilidad del estudio.
+Usando el software estadístico R y la función sample(). De esta manera cualquier hogar tendra la misma probabilidad de ser seleccionado en el estudio. Ademas se fija una semilla con el fin de permitir reproducibilidad del estudio.
 
 La muestra aleatoria es la siguiente:
 
@@ -82,6 +82,18 @@ kable(t(query), caption = "Tabla Adultos mayores") %>%
 Como se puede observar en la muestra aleatorio cuentan con 6 hogares que tienen 
 adultos mayores. Se procede a realizar los respectivos intervalos de confianza. 
 
+
+Tenemos: 
+
+- **N** = 120
+
+- **n** = 15
+
+- **$\alpha$** = 0.03 
+
+Basados en lo anterior, procedemos a calcular los intervalos de confianza aproximados. 
+
+
 \subsection{Intervalo de confianza usando la aproximación Binomial}
 
 ```{r}
@@ -98,7 +110,7 @@ Li.conf.binom.prop <- function(pp,a,alf,n){
 ```{r}
 N <- 120 
 n <- 15
-alf <- 0.05
+alf <- 0.03
 
 
 intervalolsb <- seq(a/n, 1, 0.0001)
@@ -130,7 +142,7 @@ grid.arrange(p2,p1,ncol=2)
 ```{r}
 ind1 <- which((abs(ysb)<0.0001))
 
-print("#  pp   Error comparado  con alfa/2 = 0.05")
+print("#  pp   Error comparado  con alfa/2 = 0.03")
 mb1 <- matrix(c(intervalolsb[ind1],ysb[ind1]), ncol = 2)
 print(mb1)
 maxb <- mb1[abs(mb1[,2])==min(abs(mb1[,2])),]
@@ -139,7 +151,7 @@ maxb <- maxb[1]
 #Lower
 ind2 <- which((abs(yib)<0.0001))
 
-print("#  pp   Error comparado  con alfa/2 = 0.05")
+print("#  pp   Error comparado  con alfa/2 = 0.03")
 mb2 <- matrix(c(intervalolsb[ind2],yib[ind2]), ncol = 2)
 print(mb2)
 minb <- mb2[abs(mb2[,2])==min(abs(mb2[,2])),]
@@ -188,7 +200,7 @@ grid.arrange(p2,p1,ncol=2)
 ```{r}
 ind1 <- which((abs(ysh)<0.01))
 
-print("#  pp   Error comparado  con alfa/2 = 0.01")
+print("#  pp   Error comparado  con alfa/2 = 0.03")
 mh1 <- matrix(c(intervalolsh[ind1],ysh[ind1]), ncol = 2)
 print(mh1)
 maxh <- mh1[abs(mh1[,2])==min(abs(mh1[,2])),]
@@ -197,7 +209,7 @@ maxh <- maxh[1]
 #Lower
 ind2 <- which((abs(yih)<0.01))
 
-print("#  pp   Error comparado  con alfa/2 = 0.01")
+print("#  pp   Error comparado  con alfa/2 = 0.03")
 mh2 <- matrix(c(intervalolsh[ind2],yih[ind2]), ncol = 2)
 print(mh2)
 minh <- mh2[abs(mh2[,2])==min(abs(mh2[,2])),]
@@ -210,5 +222,31 @@ paste("(", minh/N, ",", maxh/N,")")
 
 \section{Repita el punto anterior para el número de hogares en el barrio bajo
 estudio que tienen adultos mayores}
+
+Para estimar el numero total de hogares que cuentan con la característica de 
+tener adultos mayores, bastaría con multiplicar N por cada limite, de cada intervalo
+seleccionado en el literal anterior. Dando como resultado
+
+## Utilizando la aproximación binomial:
+
+```{r echo=FALSE}
+##para el caso de la aproximacion binomial tenemos:
+snt <- ceiling(maxb*N)
+int <- ceiling(minb*N)
+
+print("## Así un intervalo de confianza está dado por:")
+cat("(",int,",",snt,")")
+```
+
+## Utilizando la aproximación hypergeometrica.
+
+```{r echo=FALSE}
+snA <- maxh
+inA <- minh
+print("## Así un intervalo de confianza está dado por:")
+cat("(",inA,",",snA,")")
+```
+
+
 
 \section{Cuál de los intervalos es mejor? Argumente.}
