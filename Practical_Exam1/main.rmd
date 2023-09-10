@@ -1,0 +1,257 @@
+---
+header-evals:
+- \usepackage{longtable}
+- \usepackage[utf8]{inputenc}
+- \usepackage[spanish]{babel}\decimalpoint
+#- \setlength{\parindent}{1.25cm}
+- \usepackage{amsmath}
+output:
+  pdf_document:
+    number_sections: true
+fontsize: 12pt
+papersize: letter
+#geometry: margin = 1in
+language: "es"
+lang: es-ES
+---
+
+```{r setup, echo=FALSE}
+knitr::opts_chunk$set(warning = FALSE,
+                      message = FALSE)
+
+```
+
+
+```{=tex}
+\pagestyle{myheadings}
+\input{DocumentFormat/titlepage}
+\tableofcontents
+\newpage
+```
+\setcounter{page}{2}
+
+
+```{r, echo = F}
+library(tidyverse)
+library(knitr)
+library(magrittr)
+library(readxl)
+options(scipen=100)
+```
+
+\begin{center}
+\textbf{Trabajo Práctico Primer Examen Parcial}
+\end{center}
+
+Se busca calcular la proporción de libros en la sección 14, que ha sido seleccionada de forma aleatoria entre 62 secciones de la biblioteca, relacionados con economía y medio ambiente que fueron publicados después del año 2000. También queremos estimar el número total de libros en esta sección que cumplen con estos criterios. Para lograr esto, hemos decidido llevar a cabo un muestreo aleatorio simple, como se describe a continuación, con el objetivo de obtener estimaciones con un nivel de confianza del 90% y un error relativo máximo del 10%. ***(Enunciado del trabajo)***
+
+
+# Diseño del muestreo
+
+Cada sección de la biblioteca está compuesta por 60 estantes, 30 a cada lado, y en promedio, cada estante alberga alrededor de 30 libros. Esto significa que aproximadamente hay unos 1800 libros en cada sección. Dado que la mayoría de las secciones son similares en estructura y tamaño, vamos a trabajar con ***N = 1800*** para la selección de la muestra inicial. Estos datos se tomaron gracias a la información suministrada por la persona encargada de la biblioteca y de organizar los estantes.
+
+Además, **nuestro elemento** y **unidad de muestreo** será cada libro individual en la sección 14. La población de interés comprende todos los libros en dicha sección, y el **marco muestral** está representado por el estante correspondiente a la sección 14, que contiene todos los elementos de la población de interés. Es relevante señalar que al enumerar los libros se siguió un orden, comenzando por aquellos ubicados en la parte superior del estante y concluyendo en la zona inferior del mismo.
+
+Tenemos como parámetros de interés la **proporción de libros** en la sección cuyo año de publicación fue después del año 2000 y el número total de libros de la misma sección que cumplen con dichas especificaciones.
+
+# Muestra piloto
+
+Considerando la gran cantidad de libros disponibles y con el objetivo de obtener estimaciones precisas, optaremos por tomar una muestra aleatoria simple de 30 libros. Ya que este tamaño de muestra podría ser apropiado para calcular con precisión la varianza y determinar el tamaño definitivo de la muestra que necesitaremos para nuestras estimaciones.
+
+```{r, echo=FALSE}
+set.seed(0)
+libros <- sample(1:1800,30) %>% sort(decreasing = F) 
+```
+
+Con ayuda de R se seleccionaron aleatoriamente 30 números entre 1 y 1800, se obtuvo como muestra piloto:
+
+```{=tex}
+\vfill \break
+```
+
+
+```{r, echo=FALSE}
+muestra_piloto <- readxl::read_xlsx("Data/Muestra_piloto.xlsx")
+muestra_piloto %<>%  mutate(titulo = str_sub(titulo,1,30)
+                            , atributo = ifelse(Fecha>2000,1,0))
+kable(muestra_piloto)
+```
+
+Donde **Id** es el número que identifica el libro dentro de la población, **titulo** presenta un fragmento del título del libro, **Fecha** corresponde al año de publicación del libro y **atributo** es una variable categórica que toma el valor de uno si la fecha de publicación es mayor a 2000 o cero en caso contrario.
+
+$$ \epsilon = 0.10 \hspace{1 cm} \alpha = 0.10 \hspace{1 cm} N=1800 \hspace{1 cm} Z_{(1-\alpha/2)} = 1.644854$$
+
+Además tenemos que una estimación para la proporción es:
+
+$$ \mathbf{\hat{p}} = \frac{1}{30}\sum_{i=1}^{30}atributo_i = \frac{`r sum(muestra_piloto[,4])`}{30} = `r sum(muestra_piloto[,4])/30`$$
+
+```{r, echo=FALSE}
+eps <- 0.10
+alfa <- 0.10
+N <- 1800
+p_est <- sum(muestra_piloto[,4])/30
+```
+
+```{r,echo=FALSE}
+n_o <- ((1.644854^2)*(p_est*(1-p_est)))/((eps*p_est)^2)
+n <- 1/((1/N)+(((N-1)/N)*(1/n_o)))
+```
+
+
+Con los datos anteriores, podemos calcular el tamaño de la muestra final como:
+
+$$n = \frac{1}{\frac{1}{N}+\frac{N-1}{N}\left( \frac{1}{\mathbf{n_o}} \right)} ; \hspace{1 cm} \mathbf{n_o}=  \frac{Z_{(1-\alpha/2)}^2\ \hat{p}(1-\hat{p})}{B_p^2} = \frac{1.644854^2 [0.366(1-0.366)]}{`r eps*p_est`^2} = `r n_o`$$
+
+Así, vemos que $\mathbf{n = `r n` \ \approx 372}$, Dado que los datos se toman el mismo día y en la misma sección se van a mantener las primeras 30 obervaciones como elementos de la muestra final. De esta forma se toman los otros 342 registros tomando de forma aleatoria los indices con la ayuda de la función sample() del R.
+
+```{r, echo=FALSE}
+set.seed(578)
+indices <- seq(1:1800)[-libros]
+libros_index <- sample(indices,342) %>% sort(decreasing = F) 
+```
+
+```{r, echo=FALSE}
+muestra_final <- readxl::read_xlsx("Data/Muestra_final.xlsx")  %>% mutate(atributo = ifelse(Fecha>2000,1,0))
+```
+
+Se presentan las primeras 10 observaciones de la base de datos:
+
+```{=tex}
+\hspace{1em}
+```
+
+```{r, echo=FALSE}
+kable(head(muestra_final, n=10))
+```
+
+\newpage
+
+Ahora, tenemos que la estimación para la proporción con la muestra final es:
+
+```{r, echo=FALSE}
+p_est <- sum(muestra_final[,3])/372
+```
+
+
+$$\mathbf{\hat{p}} = \frac{1}{372}\sum_{i=1}^{372}atributo_i = \frac{`r 90`}{372} = `r round(p_est,4)`$$
+
+# Estimación de la proporción de libros cuyo año de publicación fue después de 2000.
+
+Para realizar dichas estimaciones recordemos que tenemos $\mathbf{\hat{p}} = 0.2419$ y que los intervalos de confianza para la proporción tienen la forma:
+
+$$ \hat{p} \hspace{0.3 cm} \pm \hspace{0.3 cm} t_{(1-\alpha/2,\ n-1)}\sqrt{\hat{V}(\hat{p})} \hspace{0.3 cm} \text{; con} \hspace{0.3 cm} \hat{V}(\hat{p}) = \ \frac{\hat{p}(1-\hat{p})}{n -1} \left( \frac{N-n}{N} \right)$$
+
+De esta forma y retomando los datos anteriores tenemos que un intervalo al 90% para dicha proporción estará dado  por:
+
+```{r, echo=FALSE}
+B <- qt(1-alfa/2, 371)*sqrt(((p_est*(1-p_est))/371)*((1800-372)/1800))
+lim_inf <- p_est - B
+lim_sup <- p_est + B
+```
+
+$$ 0.2419 \hspace{0.3 cm} \pm \hspace{0.3 cm}  t_{(1-\alpha/2,\ n-1)}\sqrt{\frac{0.2419(1-0.2419)}{371} \left( \frac{1800-372}{1800} \right)} \ = \ 0.2419 \hspace{0.3 cm} \pm \hspace{0.3 cm} `r B` $$
+
+Así, con una confianza del 90% la proporción de libros en la sección 14 cuyo año de publicación fue después de 2000 estará entre `r lim_inf` y `r lim_sup`
+
+# Estimación del número total de libros de la sección 14 cuyo año de publicación fue después de 2000.
+
+Teniendo en cuenta que ya tenemos las estimaciones y los intervalos para la proporción podemos calcular dichos valores para el total multiplicandolos por N = 1800, de esta forma una estimación para el total de libros en la sección 14 cuyo año de publicación fue después de 2000 es: 
+
+```{r, echo=FALSE}
+A <- p_est * 1800
+lim_inf_A <- lim_inf * 1800
+lim_sup_A <- lim_sup * 1800
+```
+
+$$\mathbf{\hat{A}} = `r p_est`(1800) = `r p_est * 1800` \ \approx \ 436$$
+
+Del mismo modo, un intervalo de confianza al 90% para el total es:
+
+$$ N(`r lim_inf`, `r lim_sup`) = (`r lim_inf_A`, `r lim_sup_A`) \ \approx \ (376, 495)$$
+
+Por lo tanto, con una confianza del 90% el total de libros en la sección 14 cuyo año de publicación fue después de 2000 estará entre 376 y 495
+
+# Observaciones
+
+Durante el transcurso de la práctica, nuestra comprensión sobre el proceso de muestreo fue totalmente diferente. No teníamos idea de la cantidad de control y atención a los detalles que se requieren al llevar a cabo la toma de los datos. Además, descubrimos que elaborar una estrategia adecuada para el muestreo es bastante complejo.
+
+Uno de los desafíos más notables se presenta al tomar la muestra, especialmente cuando la población a muestrear es considerablemente grande. Mantener el control para asegurarse de no dejar ningún elemento fuera o simplemente perder la cuenta o el orden en el que se seleccionan los elementos requiere de mucho cuidado y concentración, ya que la calidad de los resultados depende de ello.
+
+Lo que pudimos observar es que es muy útil buscar la orientación de personas con experiencia o que están en contacto continuo con la población de interés. Estas personas pueden guiar al investigador en la realización de procesos que pueden resultar desconocidos para él o proporcionar información sobre la clasificación y distribución de los elementos en dicha población. Gracias a estos aspectos, fue mucho más fácil llevar a cabo el muestreo y realizar las estimaciones necesarias.
+
+# Anexo Código
+
+
+```{r, echo=TRUE, eval=FALSE}
+set.seed(0)
+libros <- sample(1:1800,30) %>% sort(decreasing = F) 
+```
+
+
+```{r, echo=TRUE, eval=FALSE}
+muestra_piloto <- readxl::read_xlsx("Data/Muestra_piloto.xlsx")
+muestra_piloto %<>%  mutate(titulo = str_sub(titulo,1,30)
+                            , atributo = ifelse(Fecha>2000,1,0))
+kable(muestra_piloto)
+```
+
+
+```{r, echo=TRUE, eval=FALSE}
+eps <- 0.10
+alfa <- 0.10
+N <- 1800
+p_est <- sum(muestra_piloto[,4])/30
+```
+
+```{r,echo=TRUE, eval=FALSE}
+n_o <- ((1.644854^2)*(p_est*(1-p_est)))/((eps*p_est)^2)
+n <- 1/((1/N)+(((N-1)/N)*(1/n_o)))
+```
+
+
+
+
+```{r, echo=TRUE, eval=FALSE}
+set.seed(578)
+indices <- seq(1:1800)[-libros]
+libros_index <- sample(indices,342) %>% sort(decreasing = F) 
+```
+
+```{r, echo=TRUE, eval=FALSE}
+muestra_final <- readxl::read_xlsx("Data/Muestra_final.xlsx")  %>% 
+  mutate(atributo = ifelse(Fecha>2000,1,0))
+```
+
+
+```{r, echo=TRUE, eval=FALSE}
+kable(head(muestra_final, n=10))
+```
+
+
+
+```{r, echo=TRUE, eval=FALSE}
+p_est <- sum(muestra_final[,3])/372
+```
+
+
+
+
+```{r, echo=TRUE, eval=FALSE}
+B <- qt(1-alfa/2, 371)*sqrt(((p_est*(1-p_est))/371)*((1800-372)/1800))
+lim_inf <- p_est - B
+lim_sup <- p_est + B
+```
+
+
+
+```{r, echo=TRUE, eval=FALSE}
+A <- p_est * 1800
+lim_inf_A <- lim_inf * 1800
+lim_sup_A <- lim_sup * 1800
+```
+
+
+
+
+
+
