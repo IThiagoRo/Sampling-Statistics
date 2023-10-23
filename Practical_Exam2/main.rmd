@@ -1,0 +1,358 @@
+---
+header-evals:
+- \usepackage{longtable}
+- \usepackage[utf8]{inputenc}
+- \usepackage[spanish]{babel}\decimalpoint
+#- \setlength{\parindent}{1.25cm}
+- \usepackage{amsmath}
+output:
+  pdf_document:
+    number_sections: true
+fontsize: 12pt
+papersize: letter
+#geometry: margin = 1in
+language: "es"
+lang: es-ES
+---
+
+```{r setup, echo=FALSE}
+knitr::opts_chunk$set(warning = FALSE,
+                      message = FALSE)
+
+```
+
+
+```{=tex}
+\pagestyle{myheadings}
+\input{DocumentFormat/titlepage}
+\tableofcontents
+\newpage
+```
+\setcounter{page}{2}
+
+
+```{r, echo = F}
+library(tidyverse)
+library(knitr)
+library(magrittr)
+library(readxl)
+options(scipen=100)
+```
+
+\begin{center}
+\textbf{Trabajo Práctico Segundo Examen Parcial}
+\end{center}
+
+Utilizando el texto __Elementary Survey Sampling__ se aplica el M.A.E. para estimar el número promedio de palabras por párrafo. Para esto, se generan tres estratos utilizando los capitulos del texto de la siguiente manera:
+
+- __Estrato 1:__ Capítulos 1, 2 y 3.
+- __Estrato 2:__ Capítulos 4, 5 y 7.
+- __Estrato 3:__ Capítulos 7, 8, 9 y 10.
+
+
+\section{Construcción de marco muestral por estrato.}
+
+Con el fin de tratar de conservar la homogeneidad dentro de cada uno de los estratos, mantener una baja variabilidad en el número de palabras por párrafo y obtener una estimación más precisa del parámetro de interés, se utilizan los párrafos del libro que presenten características similares en su longitud. Por lo tanto, es claro que no se consideran como párrafos las fórmulas matemáticas, los gráficos y las tablas que aparezcan en el libro. De igual manera, cuando las fórmulas están dentro del párrafo no se tienen en cuenta como palabras.
+
+Para el caso de las secciones de ejercicios en cada capítulo, se tiene en cuenta que existen algunos de estos que solo presentan una pregunta, por lo que no se pueden considerar directamente como párrafos. Sin embargo, existen otro tipo de ejercicios cuya formulación incluye una explicación de lo que se debe hacer, por lo tanto, si se pueden considerar como párrafos. Además, aquellos ejercicios que cuenten con literales cortos se consideran de manera general como parte del párrafo del ejercicio, mientras que aquellos que presenten un contexto de un problema, se consideran como párrafos independientes.
+
+__NOTA:__ Junto a este informe se anexa el libro con la enumeración realizada para cada párrafo. 
+
+
+\section{Formato de EXCEL para el registro de información.}
+
+El formato creado contiene tres pestañas:
+
+- __MAE piloto:__ Contiene el conteo de palabras realizado en la muestra piloto.
+
+- __MAE final:__ Contiene el conteo de palabras realizado en la muestra final.
+
+- __Conteo de párrafos:__ Contiene el número de párrafos por estrato.
+
+
+__NOTA:__ Junto a este informe se anexa el formato descrito con el nombre __Registro de información.xlsx__.
+
+
+\section{Muestra piloto}
+
+Para obtener estimaciones de la varianza del número de palabras por párrafo en los tres estratos, se considera realizar una muestra piloto, donde en cada uno de los estratos se obtienen muestras aleatorias simples (M.A.S.) de 20 párrafos seleccionados aleatoriamente.
+
+A continuación, se muestra el código utilizado para obtener las tres M.A.S. por cada estrato. Además, el número de párrafos por estrato es el siguiente:
+
+- __Estrato 1:__ 305 párrafos.
+- __Estrato 2:__ 560 párrafos.
+- __Estrato 3:__ 447 párrafos.
+
+A continuación, se obtienen las M.A.S. para cada estrato:
+
+```{r}
+# Proponer valor de semilla para obtener siempre los mismos valores aleatorios.
+set.seed(123)
+
+# MAS para estrato 1.
+MAS1 = sample(1:305, 20)
+sort(MAS1)
+
+# MAS para estrato 1.
+MAS2 = sample(1:560, 20)
+sort(MAS2)
+
+# MAS para estrato 1.
+MAS3 = sample(1:447, 20)
+sort(MAS3)
+```
+Ahora, se exporta la información obtenida con las muestras para poder estimar el número promedio de palabras por párrafo en cada estrato y su respectiva varianza muestral.
+
+```{r, warning=FALSE, message=FALSE}
+# Se importa el formato de información para la muestra piloto:
+DataMuestraPiloto = read_excel("Data/Registro de información.xlsx", 
+                               sheet = "MAE piloto")
+```
+
+```{r}
+# Promedio y varianza muestral para el estrato 1.
+MediaE1 = mean(DataMuestraPiloto[DataMuestraPiloto$Estrato == "Estrato 1", 
+                                 "Palabras"]$Palabras)
+VarE1 = var(DataMuestraPiloto[DataMuestraPiloto$Estrato == "Estrato 1", 
+                              "Palabras"]$Palabras)
+MediaE1
+VarE1
+```
+
+```{r}
+# Media y varianza muestral para el estrato 2.
+MediaE2 = mean(DataMuestraPiloto[DataMuestraPiloto$Estrato == "Estrato 2", 
+                                 "Palabras"]$Palabras)
+VarE2 = var(DataMuestraPiloto[DataMuestraPiloto$Estrato == "Estrato 2", 
+                              "Palabras"]$Palabras)
+MediaE2
+VarE2
+```
+
+```{r}
+# Media y varianza muestral para el estrato 3.
+MediaE3 = mean(DataMuestraPiloto[DataMuestraPiloto$Estrato == "Estrato 3", 
+                                 "Palabras"]$Palabras)
+VarE3 = var(DataMuestraPiloto[DataMuestraPiloto$Estrato == "Estrato 3", 
+                              "Palabras"]$Palabras)
+MediaE3
+VarE3
+```
+
+\section{Cálculo del tamaño de muestra y tipo de asignación a estratos}
+
+Con el fin de elegir el tipo de asignación más apropiada a los estratos, se debe entender que dicha asignación depende de los siguientes factores:
+
+1) El número de elementos en cada estrato.
+
+2) La variabilidad de las observaciones dentro de cada estrato.
+
+3) El costo de obtener una observación en cada estrato.
+
+
+Relacionado al primer item, se encontró que el número de párrafos son diferentes para cada uno de los estratos ( __Sección 2__ ). Por otra parte, con base en la muestra piloto, se pudo obtener una estimación de la varianza para cada uno de los estratos. Dichas varianzas estimadas son diferentes para cada uno de los estratos. Por último, en el contexto de este trabajo académico no se conoce el costo de contar el número de palabras por párrafo, por lo tanto, se asumen que estos costos son iguales para cada uno de los estratos. 
+
+La descripción anterior, permite concluir que el tipo de asignación más apropiado para el caso trabajado es la __Asignación óptima de Neyman__ suponiendo costos iguales y tamaños de estratos y varianzas diferentes.
+
+Con base en lo anterior, se procede a calcular el tamaño de muestra mínimo que se requiere para estimar el número promedio de palabras por párrafo del libro _Elementary Survey Sampling_ con una confianza del 95% y un error relativo del 10%.
+
+Para encontrar el tamaño de muestra $n$ se utiliza la siguiente expresión:
+
+$$n= \frac{\sum_{h=1}^{3} \frac{N_h^2 \sigma_h^2}{w_h}}{N^2D + \sum_{h=1}^{3}N_h\sigma_h^2} $$
+Donde $D = \frac{B^2}{Z_{\alpha/2}^2}$
+
+En este caso, se tiene que el error relativo $\epsilon = 0.1$, es decir, $\epsilon = \frac{B}{\mu} \Longleftrightarrow B = 0.1*\mu$. Para este caso se debe estimar $\mu$ utilizando la información de la muestra piloto. 
+
+
+```{r}
+# Estimación de la media con la muestra piloto.
+MediaPiloto = mean(DataMuestraPiloto$Palabras)
+MediaPiloto
+```
+Por tanto, $\hat{\mu}_{Piloto} = 77.75$, entonces $B = 0.1*77.75 = 7.775 \approx 8$. Este valor se puede nombrar como el límite del error absoluto para la estimación del número promedio de palabras por párrafo en el libro.
+
+Con el valor de $B$ encontrado, se calcula $D = \frac{8^2}{Z_{\alpha/2}}$, donde $\alpha = 1-0.95 = 0.05$. Por tanto, $D = \frac{8^2}{Z_{0.05/2}} = \left(\frac{8}{1.96}\right)^2$
+
+Como se va a utilizar la __Asignación óptima de Neyman__, las proporciones para cada estrato se encuentran con la siguiente expresión:
+
+$$w_h = \frac{N_h\sigma_h}{\sum_{h=1}^{3} N_h\sigma_h}$$
+
+Ahora, de acuerdo a la asignación óptima se tiene que:
+
+$$w_1 = \frac{305*60.9342}{(305*60.9342)+(560*46.26045)+(447*32.50567)} = 0.3148877$$
+
+$$w_2 = \frac{560*46.26045}{(305*60.9342)+(560*46.26045)+(447*32.50567)} = 0.4389274$$
+
+$$w_3 = \frac{447*32.50567}{(305*60.9342)+(560*46.26045)+(447*32.50567)} = 0.2461849$$
+
+$$ \sum_{h=1}^{3}\frac{N^2_h\sigma^2_h}{w_h} = \frac{305^2(3712.976)}{0.3148877} + \frac{560^2(2140.029)}{0.4389274} + \frac{447^2(1056.618)}{0.2461849} =  3483456042$$
+
+$$\sum_{h=1}^{3}N_h\sigma^2_h = 305(3712.976) + 560(2140.029) + 477(1056.618) = 2834881$$
+
+
+$$N^2D = 1312^2\left(\frac{8}{1.96}\right)^2 = 28677118$$
+
+Para hallar $n$ se unen los resultados anteriores:
+
+$$n = \frac{3483456042}{28677118+ 2834881} = 110.5438  \approx 111$$
+
+Por lo tanto, el tamaño de muestra necesario para estimar el número promedio de palabras por párrafo del libro con una confianza del 95% y un error relativo del 10% es $n = 111$.
+
+
+\section{Estimación con base en la M.A.E. obtenida.}
+
+
+La asignación de $n = 111$ para cada estrato es:
+
+- $n_1 = nw_1 = 111*(0.3148877) = 34.95253 \approx 35$
+
+- $n_2 = nw_2 = 111*(0.4389274) = 48.72094 \approx 49$
+
+- $n_3 = nw_3 = 111*(0.2461849) = 27.32652 \approx 27$
+
+
+Ahora, se realizan las muestras aleatorias simples por cada estrato para poder estimar el parámetro de interés.
+
+```{r}
+# Proponer valor de semilla para obtener siempre los mismos valores aleatorios.
+set.seed(345)
+
+# MAS para estrato 1.
+MAS1_G = sample(1:305, 35)
+sort(MAS1_G)
+
+# MAS para estrato 1.
+MAS2_G = sample(1:560, 49)
+sort(MAS2_G)
+
+# MAS para estrato 1.
+MAS3_G = sample(1:447, 27)
+sort(MAS3_G)
+```
+
+```{r, warning=FALSE, message=FALSE}
+# Se importa el formato de información para la muestra final:
+DataMuestraFinal = read_excel("Data/Registro de información.xlsx", 
+                              sheet = "MAE final")
+DataMuestraFinal = DataMuestraFinal[,c("Estrato","Pagina","Parrafo","Palabras")]
+```
+
+De la M.A.E. generada, se obtuvieron los siguientes resultados:
+
+
+```{r}
+# Media y varianza muestral para el estrato 1.
+MediaE1_G = mean(DataMuestraFinal[DataMuestraFinal$Estrato == "Estrato 1", 
+                                  "Palabras"]$Palabras)
+VarE1_G = var(DataMuestraFinal[DataMuestraFinal$Estrato == "Estrato 1", 
+                               "Palabras"]$Palabras)
+MediaE1_G
+VarE1_G
+```
+
+```{r}
+# Media y varianza muestral para el estrato 2.
+MediaE2_G = mean(DataMuestraFinal[DataMuestraFinal$Estrato == "Estrato 2", 
+                                  "Palabras"]$Palabras)
+VarE2_G = var(DataMuestraFinal[DataMuestraFinal$Estrato == "Estrato 2", 
+                               "Palabras"]$Palabras)
+MediaE2_G
+VarE2_G
+```
+
+```{r}
+# Media y varianza muestral para el estrato 3.
+MediaE3_G = mean(DataMuestraFinal[DataMuestraFinal$Estrato == "Estrato 3", 
+                                  "Palabras"]$Palabras)
+VarE3_G = var(DataMuestraFinal[DataMuestraFinal$Estrato == "Estrato 3", 
+                               "Palabras"]$Palabras)
+MediaE3_G
+VarE3_G
+```
+La información anterior se resume en la siguiente tabla:
+
+| Estrato   | Párrafos totales| Párrafos muestreados| Media muestral| Varianza muestral|
+|-----------|-----------------|---------------------|---------------|------------------|
+| Estrato 1 | 305             | 35                  | 106.4571      | 3476.255         |
+| Estrato 2 | 560             | 49                  | 73.36735      | 1803.862         |
+| Estrato 3 | 447             | 27                  | 68.18519      | 1189.464         |
+
+
+
+El número promedio de palabras por párrafo en el libro se puede estimar como sigue: 
+
+$$\hat{\mu}_{est} = \frac{1}{N}\sum_{h=1}^{3}N_h\bar{y}_h = \frac{1}{1312}\left(305*106.4571 + 560*73.36735 + 447*68.18519\right) = 79.29414 \approx 79$$
+
+Se estima que el número promedio de palabras por párrafo en el libro es igual a 79. 
+
+
+Ahora, se calcula la varianza de la media estimada de la siguiente manera:
+
+$$Var[\hat{\mu}_{est}] = \frac{1}{N^2}*\sum_{h=1}^{3}N_h^2Var[\hat{\mu}_h]$$ 
+Donde: 
+
+$$Var[\hat{\mu}_h]=\left(1-\frac{n_h}{N_h}\right)\frac{\sigma^2_h}{n_h}$$
+Entonces,
+
+$$\hat{Var}[\hat{\mu}_1]=\left(1-\frac{35}{305}\right)\frac{3476.255}{35} = 87.92401$$
+
+
+$$\hat{Var}[\hat{\mu}_2]=\left(1-\frac{49}{560}\right)\frac{1803.862}{49} = 33.59233$$
+
+
+$$\hat{Var}[\hat{\mu}_3]=\left(1-\frac{27}{447}\right)\frac{1189.464}{27} = 41.39671$$
+
+Con la información calculada, se obtiene la estimación de la $Var[\hat{\mu}_{est}]$:
+
+
+$$\hat{Var}[\hat{\mu}_{est}] = \frac{1}{1312^2}\left[(305^2)(87.92401) + (560^2)(33.59233) + (447^2)(41.39671)\right] = 15.67677$$
+
+Ahora, se obtiene el respectivo intervalo de confianza. Para esto, se debe obtener el __Error Estándar__ con base en el tamaño de la muestra. Como el tamaño de muestra obtenido es mayor a 30 ($n = 111$), entonces se utiliza el __Límite del error estándar__ $B = Z_{\alpha/2}\sqrt{\hat{Var}[\hat{\mu}_{est}]}$
+
+Por lo tanto, para obtener un intervalo de confianza para el valor medio de palabras por párrafo en el libro con una confianza del 95%, se tiene lo siguiente:
+
+$$B = Z_{0.025}\sqrt{15.67677} = 1.96*3.95939 = 7.760404$$
+
+
+$$\hat{\mu}_{est} \pm B \Longleftrightarrow 79 \pm 7.760404 $$
+Al realizar los cálculos y redondear al entero más cercano, se obtiene el siguiente intervalo __$(71,87)$__, es decir, el número promedio de palabras por párrafo para el libro _Elementary Survey Sampling_ se encuentra entre 71 y 87 palabras, esto con una confianza del 95%.
+
+
+\section{Inferencias con base en la M.A.E. obtenida}
+
+Con los datos obtenidos en la M.A.E. se responde la siguiente pregunta:
+
+__¿Existe diferencia significativa entre el número promedio de palabras por párrafo entre los estratos 1 y 2?__  
+
+Para realizar dicha verificación, se utiliza la siguiente prueba de hipótesis con una significancia del 5%:
+
+$$H_0: \mu_1 - \mu_2 = 0$$
+$$H_1: \mu_1 - \mu_2 \neq 0$$
+Como los tamaños de muestra para ambos estratos son mayores o iguales a 30 párrafos y no se conocen las varianzas poblacionales sino las muestrales, entonces se utiliza el siguiente estadístico de prueba aproximado:
+
+
+$$Z_c = \frac{(\bar{y}_1 - \bar{y}_2)}{\sqrt{\frac{S_1^2}{n_1}(1-\frac{n_1}{N_1}) + \frac{S_2^2}{n_2}(1-\frac{n_2}{N_2})}} \sim n(0,1)$$
+Al reemplazar los respectivos valores en la expresión anterior, se obtiene:
+
+$$Z_c = \frac{(106.4571 - 73.36735)}{\sqrt{\frac{3476.255}{35}(1-\frac{35}{305}) + \frac{1803.862}{49}(1-\frac{49}{560})}} = 3.001761$$
+
+Ahora, se calcula el __valor P__ para la prueba de la siguiente manera:
+
+$$Val_P = 2P(Z>|Z_c|) = 2P(Z > |3.001761|)$$
+```{r}
+# Cálculo de valor P.
+2*pnorm(3.001761, lower.tail = FALSE)
+```
+
+Por lo tanto, $Val_P = 0.002684228$
+
+Al comparar el Valor P obtenido con el nivel de significancia de la prueba del 5%, se puede concluir que se rechaza la hipótesis nula y, por tanto, el número promedio de palabras por párrafo en el Estrato 1 es significativamente diferente con respecto al Estrato 2 con una siginificancia del 5%.
+
+
+
+
+
+
+
+
+
